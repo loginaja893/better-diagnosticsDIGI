@@ -370,3 +370,96 @@ final class BDIGIHash {
         String payload = new String(sessionId, StandardCharsets.ISO_8859_1) + ":" + (resolutionSummary != null ? resolutionSummary : "");
         return sha256(payload.getBytes(StandardCharsets.UTF_8));
     }
+}
+
+// ─── BDIGI Engine (core logic) ──────────────────────────────────────────────
+
+final class BDIGIEngine {
+    private final Map<String, BDIGIDiagnosticSession> sessionsByKey = new ConcurrentHashMap<>();
+    private final Map<String, List<byte[]>> stepsBySession = new ConcurrentHashMap<>();
+    private final List<Object> eventLog = new CopyOnWriteArrayList<>();
+    private final AtomicLong sessionCounter = new AtomicLong(0L);
+    private final int[] categoryCounts = new int[BDIGIConfig.BDIGI_CATEGORY_COUNT + 1];
+    private final long[] categoryCaps;
+    private volatile boolean paused;
+    private final String triageKeeperHex;
+    private int reentrancyGuard;
+
+    BDIGIEngine() {
+        triageKeeperHex = BDIGIConfig.BDIGI_TRIAGE_KEEPER;
+        categoryCaps = new long[BDIGIConfig.BDIGI_CATEGORY_COUNT + 1];
+        for (int i = 1; i <= BDIGIConfig.BDIGI_CATEGORY_COUNT; i++) {
+            categoryCaps[i] = BDIGIConfig.BDIGI_MAX_SESSIONS_PER_CATEGORY;
+        }
+    }
+
+    private String sessionKey(byte[] sessionId) {
+        return Base64.getEncoder().encodeToString(sessionId != null ? sessionId : new byte[0]);
+    }
+
+    public byte[] openSession(String reporterHex, int category) {
+        if (paused) throw new BDIGIRegistryPausedException();
+        if (reporterHex == null) reporterHex = BDIGIConfig.BDIGI_ZERO;
+        if (category < 1 || category > BDIGIConfig.BDIGI_CATEGORY_COUNT) throw new BDIGIInvalidCategoryException();
+        if (categoryCounts[category] >= categoryCaps[category]) throw new BDIGICategoryCapReachedException();
+        if (reentrancyGuard != 0) throw new BDIGIReentrantException();
+        reentrancyGuard = 1;
+        try {
+            long nonce = sessionCounter.incrementAndGet();
+            byte[] sessionId = BDIGIHash.sessionIdFrom(reporterHex, category, nonce);
+            String key = sessionKey(sessionId);
+            if (sessionsByKey.containsKey(key)) throw new BDIGICategoryCapReachedException();
+            long atMs = System.currentTimeMillis();
+            BDIGIDiagnosticSession session = new BDIGIDiagnosticSession(
+                sessionId, reporterHex, category, atMs,
+                false, new byte[0], BDIGIConfig.BDIGI_OUTCOME_NONE, 0, new ArrayList<>());
+            sessionsByKey.put(key, session);
+            stepsBySession.put(key, new ArrayList<>());
+            categoryCounts[category]++;
+            eventLog.add(new BDIGISessionOpenedEvent(sessionId, reporterHex, category, atMs));
+            return sessionId;
+        } finally {
+            reentrancyGuard = 0;
+        }
+    }
+
+    public void recordStep(byte[] sessionId, int stepIndex, byte[] stepHash) {
+        if (sessionId == null || stepHash == null || stepHash.length == 0) throw new BDIGIZeroHashException();
+        if (stepIndex < 0 || stepIndex >= BDIGIConfig.BDIGI_MAX_STEPS_PER_SESSION) throw new BDIGIStepIndexOutOfRangeException();
+        String key = sessionKey(sessionId);
+        BDIGIDiagnosticSession session = sessionsByKey.get(key);
+        if (session == null) throw new BDIGISessionNotFoundException();
+        if (session.isResolved()) throw new BDIGISessionAlreadyResolvedException();
+        List<byte[]> steps = stepsBySession.get(key);
+        if (steps == null) steps = new ArrayList<>();
+        while (steps.size() <= stepIndex) steps.add(new byte[0]);
+        steps.set(stepIndex, stepHash.clone());
+        stepsBySession.put(key, steps);
+        eventLog.add(new BDIGIStepRecordedEvent(sessionId, stepIndex, stepHash, System.currentTimeMillis()));
+    }
+
+    public void attestResolution(byte[] sessionId, byte[] resolutionHash, int outcome, String triageKeeperCaller) {
+        if (sessionId == null || resolutionHash == null || resolutionHash.length == 0) throw new BDIGIZeroHashException();
+        if (outcome < 0 || outcome >= BDIGIConfig.BDIGI_OUTCOME_CAP) throw new BDIGIOutcomeOutOfRangeException();
+        if (!triageKeeperHex.equalsIgnoreCase(triageKeeperCaller)) throw new BDIGINotTriageKeeperException();
+        String key = sessionKey(sessionId);
+        BDIGIDiagnosticSession session = sessionsByKey.get(key);
+        if (session == null) throw new BDIGISessionNotFoundException();
+        if (session.isResolved()) throw new BDIGISessionAlreadyResolvedException();
+        List<byte[]> steps = stepsBySession.get(key);
+        BDIGIDiagnosticSession updated = new BDIGIDiagnosticSession(
+            session.getSessionId(), session.getReporterHex(), session.getCategory(), session.getOpenedAtMs(),
+            true, resolutionHash, outcome, steps != null ? steps.size() : 0, steps != null ? steps : Collections.emptyList());
+        sessionsByKey.put(key, updated);
+        eventLog.add(new BDIGIResolutionAttestedEvent(sessionId, resolutionHash, outcome, System.currentTimeMillis()));
+    }
+
+    public void setCategoryCap(int category, long newCap) {
+        if (category < 1 || category > BDIGIConfig.BDIGI_CATEGORY_COUNT) throw new BDIGIInvalidCategoryException();
+        long prev = categoryCaps[category];
+        categoryCaps[category] = Math.max(0, newCap);
+        eventLog.add(new BDIGICategoryThresholdUpdatedEvent(category, prev, categoryCaps[category], System.currentTimeMillis()));
+    }
+
+    public void setPaused(boolean p) {
+        paused = p;
