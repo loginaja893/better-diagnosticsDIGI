@@ -835,3 +835,96 @@ final class BDIGIStepTemplates {
         List<String> list = TEMPLATES.get(category);
         if (list == null || index < 0 || index >= list.size()) return "";
         return list.get(index);
+    }
+}
+
+// ─── BDIGI Export (text report to string) ───────────────────────────────────
+
+final class BDIGIExport {
+    static String exportSessionToText(BDIGIDiagnosticSession session, BDIGIEngine engine) {
+        if (session == null) return "";
+        StringBuilder sb = new StringBuilder();
+        sb.append("Session ID: ").append(Base64.getEncoder().encodeToString(session.getSessionId())).append("\n");
+        sb.append("Reporter: ").append(session.getReporterHex()).append("\n");
+        sb.append("Category: ").append(session.getCategory()).append(" (").append(BDIGICategory.fromCode(session.getCategory()).getLabel()).append(")\n");
+        sb.append("Opened: ").append(new Date(session.getOpenedAtMs())).append("\n");
+        sb.append("Resolved: ").append(session.isResolved()).append("\n");
+        sb.append("Outcome: ").append(BDIGIOutcome.fromCode(session.getOutcome())).append("\n");
+        sb.append("Step count: ").append(session.getStepCount()).append("\n");
+        if (engine != null) {
+            List<byte[]> steps = engine.getSteps(session.getSessionId());
+            for (int i = 0; i < steps.size(); i++) {
+                sb.append("  Step ").append(i).append(": ").append(BDIGIHex.toHex(steps.get(i))).append("\n");
+            }
+        }
+        return sb.toString();
+    }
+
+    static String exportAllSessionsSummary(BDIGIEngine engine) {
+        BDIGIStatsAggregator agg = new BDIGIStatsAggregator(engine);
+        return agg.summary();
+    }
+}
+
+// ─── BDIGI Outcome statistics ───────────────────────────────────────────────
+
+final class BDIGIOutcomeStats {
+    private final BDIGIEngine engine;
+
+    BDIGIOutcomeStats(BDIGIEngine engine) {
+        this.engine = engine;
+    }
+
+    Map<Integer, Integer> countByOutcome() {
+        Map<Integer, Integer> m = new HashMap<>();
+        for (int o = 0; o < BDIGIConfig.BDIGI_OUTCOME_CAP; o++) m.put(o, 0);
+        for (byte[] sid : engine.listSessionIds()) {
+            BDIGIDiagnosticSession s = engine.getSession(sid);
+            if (s != null && s.isResolved()) {
+                int o = s.getOutcome();
+                m.put(o, m.getOrDefault(o, 0) + 1);
+            }
+        }
+        return m;
+    }
+
+    String outcomeSummary() {
+        Map<Integer, Integer> m = countByOutcome();
+        StringBuilder sb = new StringBuilder();
+        sb.append("Resolved: ").append(m.getOrDefault(BDIGIConfig.BDIGI_OUTCOME_RESOLVED, 0)).append("\n");
+        sb.append("Escalated: ").append(m.getOrDefault(BDIGIConfig.BDIGI_OUTCOME_ESCALATED, 0)).append("\n");
+        sb.append("Deferred: ").append(m.getOrDefault(BDIGIConfig.BDIGI_OUTCOME_DEFERRED, 0)).append("\n");
+        return sb.toString();
+    }
+}
+
+// ─── BDIGI Diagnostic flow (AI-helper flow scripts per category) ───────────
+
+final class BDIGIDiagnosticFlow {
+    static List<String> getFlowForNetwork() {
+        return Arrays.asList(
+            "Start: User reports connectivity issue.",
+            "Step 1: Confirm scope (one device vs all, one site vs all).",
+            "Step 2: Check physical link (cable/Wi‑Fi icon).",
+            "Step 3: Run ping to gateway.",
+            "Step 4: Run ping to 8.8.8.8.",
+            "Step 5: If gateway fails, check router and NIC.",
+            "Step 6: If 8.8.8.8 fails, check DNS or WAN.",
+            "Step 7: Flush DNS cache.",
+            "Step 8: Try different DNS server.",
+            "Step 9: Disable VPN/proxy temporarily.",
+            "Step 10: Check firewall rules.",
+            "Step 11: Restart network stack (netsh winsock reset).",
+            "Step 12: Escalate to ISP or network admin if WAN issue."
+        );
+    }
+
+    static List<String> getFlowForDisk() {
+        return Arrays.asList(
+            "Start: User reports disk full or errors.",
+            "Step 1: Check free space (all volumes).",
+            "Step 2: Run Disk Cleanup or Storage Sense.",
+            "Step 3: Identify largest folders (TreeSize/WinDirStat).",
+            "Step 4: Remove temp, cache, or old installers.",
+            "Step 5: Empty Recycle Bin and clear downloads.",
+            "Step 6: Check cloud sync local cache size.",
