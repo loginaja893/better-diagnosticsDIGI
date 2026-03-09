@@ -91,3 +91,96 @@ final class BDIGISessionOpenedEvent {
         this.atMs = atMs;
     }
 }
+
+final class BDIGIStepRecordedEvent {
+    final byte[] sessionId;
+    final int stepIndex;
+    final byte[] stepHash;
+    final long atMs;
+
+    BDIGIStepRecordedEvent(byte[] sessionId, int stepIndex, byte[] stepHash, long atMs) {
+        this.sessionId = sessionId != null ? sessionId.clone() : new byte[0];
+        this.stepIndex = stepIndex;
+        this.stepHash = stepHash != null ? stepHash.clone() : new byte[0];
+        this.atMs = atMs;
+    }
+}
+
+final class BDIGIResolutionAttestedEvent {
+    final byte[] sessionId;
+    final byte[] resolutionHash;
+    final int outcome;
+    final long atMs;
+
+    BDIGIResolutionAttestedEvent(byte[] sessionId, byte[] resolutionHash, int outcome, long atMs) {
+        this.sessionId = sessionId != null ? sessionId.clone() : new byte[0];
+        this.resolutionHash = resolutionHash != null ? resolutionHash.clone() : new byte[0];
+        this.outcome = outcome;
+        this.atMs = atMs;
+    }
+}
+
+final class BDIGICategoryThresholdUpdatedEvent {
+    final int category;
+    final long previousCap;
+    final long newCap;
+    final long atMs;
+
+    BDIGICategoryThresholdUpdatedEvent(int category, long previousCap, long newCap, long atMs) {
+        this.category = category;
+        this.previousCap = previousCap;
+        this.newCap = newCap;
+        this.atMs = atMs;
+    }
+}
+
+// ─── BDIGI Enums ───────────────────────────────────────────────────────────
+
+enum BDIGICategory {
+    NETWORK(1, "Network & connectivity"),
+    DISK(2, "Storage & disk"),
+    OS(3, "Operating system"),
+    BROWSER(4, "Browser & web"),
+    DRIVER(5, "Drivers & peripherals"),
+    POWER(6, "Power & battery"),
+    DISPLAY(7, "Display & graphics"),
+    AUDIO(8, "Audio & sound");
+
+    private final int code;
+    private final String label;
+    BDIGICategory(int code, String label) {
+        this.code = code;
+        this.label = label;
+    }
+    public int getCode() { return code; }
+    public String getLabel() { return label; }
+    public static BDIGICategory fromCode(int c) {
+        for (BDIGICategory cat : values()) if (cat.code == c) return cat;
+        return NETWORK;
+    }
+}
+
+enum BDIGIOutcome {
+    NONE(0),
+    RESOLVED(1),
+    ESCALATED(2),
+    DEFERRED(3);
+
+    private final int code;
+    BDIGIOutcome(int code) { this.code = code; }
+    public int getCode() { return code; }
+    public static BDIGIOutcome fromCode(int c) {
+        for (BDIGIOutcome o : values()) if (o.code == c) return o;
+        return NONE;
+    }
+}
+
+// ─── BDIGI State DTOs ───────────────────────────────────────────────────────
+
+final class BDIGIDiagnosticSession {
+    private final byte[] sessionId;
+    private final String reporterHex;
+    private final int category;
+    private final long openedAtMs;
+    private final boolean resolved;
+    private final byte[] resolutionHash;
