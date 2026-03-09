@@ -184,3 +184,96 @@ final class BDIGIDiagnosticSession {
     private final long openedAtMs;
     private final boolean resolved;
     private final byte[] resolutionHash;
+    private final int outcome;
+    private final int stepCount;
+    private final List<byte[]> steps;
+
+    BDIGIDiagnosticSession(byte[] sessionId, String reporterHex, int category, long openedAtMs,
+                           boolean resolved, byte[] resolutionHash, int outcome, int stepCount, List<byte[]> steps) {
+        this.sessionId = sessionId != null ? sessionId.clone() : new byte[0];
+        this.reporterHex = reporterHex != null ? reporterHex : BDIGIConfig.BDIGI_ZERO;
+        this.category = Math.max(1, Math.min(BDIGIConfig.BDIGI_CATEGORY_COUNT, category));
+        this.openedAtMs = openedAtMs;
+        this.resolved = resolved;
+        this.resolutionHash = resolutionHash != null ? resolutionHash.clone() : new byte[0];
+        this.outcome = outcome;
+        this.stepCount = stepCount;
+        this.steps = steps != null ? new ArrayList<>(steps) : new ArrayList<>();
+    }
+
+    public byte[] getSessionId() { return sessionId.clone(); }
+    public String getReporterHex() { return reporterHex; }
+    public int getCategory() { return category; }
+    public long getOpenedAtMs() { return openedAtMs; }
+    public boolean isResolved() { return resolved; }
+    public byte[] getResolutionHash() { return resolutionHash.clone(); }
+    public int getOutcome() { return outcome; }
+    public int getStepCount() { return stepCount; }
+    public List<byte[]> getSteps() { return new ArrayList<>(steps); }
+}
+
+// ─── BDIGI AI hint provider (suggested steps per category) ───────────────────
+
+final class BDIGIHintProvider {
+    private static final Map<Integer, List<String>> HINTS = new HashMap<>();
+
+    static {
+        HINTS.put(1, Arrays.asList(
+            "Check physical cable/Wi‑Fi connection.",
+            "Run network troubleshooter (Windows: Settings > Network).",
+            "Flush DNS: ipconfig /flushdns (Windows) or sudo dscacheutil -flushcache (macOS).",
+            "Restart router and modem.",
+            "Verify IP configuration (DHCP vs static).",
+            "Disable and re-enable the network adapter.",
+            "Check firewall/antivirus for blocked traffic.",
+            "Ping gateway and 8.8.8.8 to isolate path.",
+            "Try another DNS (e.g. 1.1.1.1 or 8.8.4.4).",
+            "Review proxy/VPN settings.",
+            "Check for driver updates for the NIC.",
+            "Confirm no MAC filtering or captive portal."
+        ));
+        HINTS.put(2, Arrays.asList(
+            "Check free space (disk cleanup / Storage Sense).",
+            "Run CHKDSK (Windows) or fsck (Linux/macOS).",
+            "Verify drive health (SMART status).",
+            "Defragment if HDD (not needed for SSD).",
+            "Check for large temp/cache folders.",
+            "Ensure drive is properly connected (SATA/USB).",
+            "Review OneDrive/Dropbox sync and local cache.",
+            "Check disk permissions.",
+            "Disable hibernation to free space (powercfg -h off).",
+            "Move user folders to another volume if needed.",
+            "Check for runaway logs or dump files.",
+            "Consider replacing drive if SMART errors."
+        ));
+        HINTS.put(3, Arrays.asList(
+            "Restart the computer.",
+            "Install pending Windows/macOS/Linux updates.",
+            "Boot into Safe Mode to isolate driver/software.",
+            "Check Task Manager for high CPU/memory usage.",
+            "Run sfc /scannow (Windows) or diskutil verifyVolume (macOS).",
+            "Review startup programs and disable unnecessary ones.",
+            "Check Event Viewer / Console for errors.",
+            "Restore to a previous restore point if available.",
+            "Reset Windows (Keep my files) or reinstall as last resort.",
+            "Verify system file integrity (DISM on Windows).",
+            "Check for conflicting security software.",
+            "Ensure BIOS/UEFI and drivers are up to date."
+        ));
+        HINTS.put(4, Arrays.asList(
+            "Clear cache and cookies.",
+            "Disable extensions one by one to find conflict.",
+            "Try incognito/private window.",
+            "Update browser to latest version.",
+            "Reset browser settings to default.",
+            "Check proxy and DNS settings in browser.",
+            "Disable hardware acceleration.",
+            "Try another browser to isolate issue.",
+            "Remove and re-add profile.",
+            "Check for conflicting VPN or firewall.",
+            "Ensure JavaScript and cookies are allowed for the site.",
+            "Review site permissions (camera, mic, location)."
+        ));
+        HINTS.put(5, Arrays.asList(
+            "Update device driver from manufacturer or Windows Update.",
+            "Uninstall device and scan for hardware changes.",
