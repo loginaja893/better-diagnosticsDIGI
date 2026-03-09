@@ -463,3 +463,96 @@ final class BDIGIEngine {
 
     public void setPaused(boolean p) {
         paused = p;
+    }
+
+    public BDIGIDiagnosticSession getSession(byte[] sessionId) {
+        String key = sessionKey(sessionId);
+        return sessionsByKey.get(key);
+    }
+
+    public List<byte[]> getSteps(byte[] sessionId) {
+        String key = sessionKey(sessionId);
+        List<byte[]> steps = stepsBySession.get(key);
+        return steps != null ? new ArrayList<>(steps) : Collections.emptyList();
+    }
+
+    public List<byte[]> listSessionIds() {
+        return sessionsByKey.values().stream()
+            .map(BDIGIDiagnosticSession::getSessionId)
+            .collect(Collectors.toList());
+    }
+
+    public int getCategoryCount(int category) {
+        if (category < 1 || category > BDIGIConfig.BDIGI_CATEGORY_COUNT) return 0;
+        return categoryCounts[category];
+    }
+
+    public long getCategoryCap(int category) {
+        if (category < 1 || category > BDIGIConfig.BDIGI_CATEGORY_COUNT) return 0;
+        return categoryCaps[category];
+    }
+
+    public List<Object> getEventLog() {
+        return new ArrayList<>(eventLog);
+    }
+
+    public List<byte[]> batchOpenSessions(String reporterHex, int[] categories) {
+        if (categories == null || categories.length > BDIGIConfig.BDIGI_MAX_BATCH_OPEN) throw new BDIGIBatchTooLargeException();
+        List<byte[]> out = new ArrayList<>();
+        for (int cat : categories) {
+            if (cat >= 1 && cat <= BDIGIConfig.BDIGI_CATEGORY_COUNT) {
+                try {
+                    byte[] sid = openSession(reporterHex, cat);
+                    out.add(sid);
+                } catch (BDIGICategoryCapReachedException e) {
+                    // skip this category
+                }
+            }
+        }
+        return out;
+    }
+}
+
+// ─── BDIGI Report builder ───────────────────────────────────────────────────
+
+final class BDIGIReportBuilder {
+    private final List<String> sections = new ArrayList<>();
+    private final long createdAtMs = System.currentTimeMillis();
+
+    BDIGIReportBuilder addSection(String title, String content) {
+        if (title != null && content != null) {
+            sections.add("## " + title + "\n" + content);
+        }
+        return this;
+    }
+
+    BDIGIReportBuilder addSessionSummary(BDIGIDiagnosticSession session) {
+        if (session == null) return this;
+        String catLabel = BDIGICategory.fromCode(session.getCategory()).getLabel();
+        sections.add("## Session\nCategory: " + catLabel + ", Steps: " + session.getStepCount() + ", Resolved: " + session.isResolved());
+        return this;
+    }
+
+    BDIGIReportBuilder addHints(int category) {
+        List<String> hints = BDIGIHintProvider.getHintsForCategory(category);
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < hints.size(); i++) {
+            sb.append((i + 1)).append(". ").append(hints.get(i)).append("\n");
+        }
+        sections.add("## Suggested steps\n" + sb.toString());
+        return this;
+    }
+
+    String build() {
+        StringBuilder out = new StringBuilder();
+        out.append("# BetterDiagnosticsDIGI Report\n");
+        out.append("Generated: ").append(new Date(createdAtMs)).append("\n\n");
+        for (String s : sections) {
+            out.append(s).append("\n\n");
+        }
+        return out.toString();
+    }
+}
+
+// ─── BDIGI Validator ───────────────────────────────────────────────────────
+
