@@ -1114,3 +1114,96 @@ final class BDIGICheckDescriptions {
         if (step == 8) return "Check certificate";
         return "Browser check step " + step;
     }
+
+    static String getDriverCheckName(int step) {
+        if (step <= 0) return "Check Device Manager";
+        if (step == 1) return "Uninstall and rescan";
+        if (step == 2) return "Windows Update driver";
+        if (step == 3) return "Manufacturer driver";
+        if (step == 4) return "Roll back driver";
+        if (step == 5) return "Try another port";
+        if (step == 6) return "Update USB controller";
+        if (step == 7) return "Disable USB selective suspend";
+        if (step == 8) return "Firmware update";
+        return "Driver check step " + step;
+    }
+
+    static String getPowerCheckName(int step) {
+        if (step <= 0) return "Check power plan";
+        if (step == 1) return "Review background apps";
+        if (step == 2) return "Battery report";
+        if (step == 3) return "Calibrate battery";
+        if (step == 4) return "Update BIOS";
+        if (step == 5) return "Disable wake sources";
+        if (step == 6) return "Check charger/cable";
+        if (step == 7) return "Disable fast startup";
+        if (step == 8) return "Check thermal";
+        return "Power check step " + step;
+    }
+
+    static String getDisplayCheckName(int step) {
+        if (step <= 0) return "Check cable";
+        if (step == 1) return "Set resolution/refresh";
+        if (step == 2) return "Update graphics driver";
+        if (step == 3) return "Roll back driver";
+        if (step == 4) return "Try another monitor";
+        if (step == 5) return "Disable multi-monitor";
+        if (step == 6) return "Display troubleshooter";
+        if (step == 7) return "Disable HW acceleration";
+        if (step == 8) return "Check GPU temperature";
+        return "Display check step " + step;
+    }
+
+    static String getAudioCheckName(int step) {
+        if (step <= 0) return "Check volume/mute";
+        if (step == 1) return "Set output device";
+        if (step == 2) return "Audio troubleshooter";
+        if (step == 3) return "Update audio driver";
+        if (step == 4) return "Disable enhancements";
+        if (step == 5) return "Check mixer";
+        if (step == 6) return "Replug device";
+        if (step == 7) return "Set default format";
+        if (step == 8) return "Disable exclusive mode";
+        return "Audio check step " + step;
+    }
+
+    static String getCheckName(int category, int step) {
+        switch (category) {
+            case 1: return getNetworkCheckName(step);
+            case 2: return getDiskCheckName(step);
+            case 3: return getOSCheckName(step);
+            case 4: return getBrowserCheckName(step);
+            case 5: return getDriverCheckName(step);
+            case 6: return getPowerCheckName(step);
+            case 7: return getDisplayCheckName(step);
+            case 8: return getAudioCheckName(step);
+            default: return "Check step " + step;
+        }
+    }
+}
+
+// ─── BDIGI Common issues and resolution snippets (AI-helper text bank) ───────
+
+final class BDIGICommonIssues {
+    private static final Map<Integer, List<String>> ISSUES = new HashMap<>();
+    private static final Map<Integer, List<String>> RESOLUTIONS = new HashMap<>();
+
+    static {
+        List<String> netIssues = Arrays.asList(
+            "No internet access", "Slow connection", "DNS resolution failed", "Limited connectivity",
+            "Wi‑Fi drops frequently", "Ethernet not detected", "Wrong IP assigned", "Cannot ping gateway",
+            "VPN blocks local network", "Proxy misconfigured", "Firewall blocking app", "Router needs reboot"
+        );
+        ISSUES.put(1, netIssues);
+        RESOLUTIONS.put(1, Arrays.asList(
+            "Restarted router and modem; connectivity restored.",
+            "Flushed DNS and changed to 1.1.1.1; resolution fixed.",
+            "Updated NIC driver; link speed improved.",
+            "Disabled VPN for local access; issue resolved.",
+            "Reset network stack (netsh winsock reset); fixed."
+        ));
+
+        List<String> diskIssues = Arrays.asList(
+            "Disk full", "Slow disk access", "CHKDSK errors", "Drive not detected",
+            "Permission denied", "Corrupt file system", "SSD not trimming", "External drive read-only",
+            "Cloud sync stuck", "Large temp files", "Windows.old present", "Recycle Bin huge"
