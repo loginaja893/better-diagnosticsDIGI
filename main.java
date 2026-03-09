@@ -1021,3 +1021,96 @@ final class BDIGIDiagnosticFlow {
             "Step 7: Run display troubleshooter.",
             "Step 8: Disable hardware acceleration in app.",
             "Step 9: Check GPU temperature.",
+            "Step 10: Try integrated graphics if available.",
+            "Step 11: Verify monitor input source and OSD.",
+            "Step 12: Escalate to GPU/monitor replacement."
+        );
+    }
+
+    static List<String> getFlowForAudio() {
+        return Arrays.asList(
+            "Start: User reports no sound or audio issue.",
+            "Step 1: Check physical volume and mute.",
+            "Step 2: Set correct output device in Sound settings.",
+            "Step 3: Run audio troubleshooter.",
+            "Step 4: Update or reinstall audio driver.",
+            "Step 5: Disable audio enhancements.",
+            "Step 6: Check app-specific volume in mixer.",
+            "Step 7: Unplug and replug USB/3.5mm device.",
+            "Step 8: Set default format (e.g. 24-bit 48 kHz).",
+            "Step 9: Disable exclusive mode.",
+            "Step 10: Check communications device setting.",
+            "Step 11: Test with another output device.",
+            "Step 12: Escalate to hardware if device failed."
+        );
+    }
+
+    static List<String> getFlowForCategory(int category) {
+        switch (category) {
+            case 1: return getFlowForNetwork();
+            case 2: return getFlowForDisk();
+            case 3: return getFlowForOS();
+            case 4: return getFlowForBrowser();
+            case 5: return getFlowForDriver();
+            case 6: return getFlowForPower();
+            case 7: return getFlowForDisplay();
+            case 8: return getFlowForAudio();
+            default: return Collections.emptyList();
+        }
+    }
+}
+
+// ─── BDIGI Check descriptions (AI-helper check labels and messages) ────────
+
+final class BDIGICheckDescriptions {
+    static String getNetworkCheckName(int step) {
+        if (step <= 0) return "Verify physical link";
+        if (step == 1) return "Ping gateway";
+        if (step == 2) return "Ping external DNS";
+        if (step == 3) return "Flush DNS cache";
+        if (step == 4) return "Check adapter status";
+        if (step == 5) return "Review firewall";
+        if (step == 6) return "Test with different DNS";
+        if (step == 7) return "Disable VPN/proxy test";
+        if (step == 8) return "Restart network stack";
+        return "Network check step " + step;
+    }
+
+    static String getDiskCheckName(int step) {
+        if (step <= 0) return "Check free space";
+        if (step == 1) return "Run Disk Cleanup";
+        if (step == 2) return "Identify large folders";
+        if (step == 3) return "Clear temp and cache";
+        if (step == 4) return "Empty Recycle Bin";
+        if (step == 5) return "Run CHKDSK";
+        if (step == 6) return "Check SMART status";
+        if (step == 7) return "Review cloud sync cache";
+        if (step == 8) return "Disable hibernation if needed";
+        return "Disk check step " + step;
+    }
+
+    static String getOSCheckName(int step) {
+        if (step <= 0) return "Restart computer";
+        if (step == 1) return "Check Task Manager";
+        if (step == 2) return "Review startup programs";
+        if (step == 3) return "Install updates";
+        if (step == 4) return "Run SFC/DISM";
+        if (step == 5) return "Check Event Viewer";
+        if (step == 6) return "Boot Safe Mode";
+        if (step == 7) return "Restore point";
+        if (step == 8) return "Memory diagnostic";
+        return "OS check step " + step;
+    }
+
+    static String getBrowserCheckName(int step) {
+        if (step <= 0) return "Try incognito";
+        if (step == 1) return "Clear cache/cookies";
+        if (step == 2) return "Disable extensions";
+        if (step == 3) return "Update browser";
+        if (step == 4) return "Check proxy/DNS";
+        if (step == 5) return "Try another browser";
+        if (step == 6) return "Disable hardware acceleration";
+        if (step == 7) return "Reset settings";
+        if (step == 8) return "Check certificate";
+        return "Browser check step " + step;
+    }
