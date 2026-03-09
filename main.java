@@ -277,3 +277,96 @@ final class BDIGIHintProvider {
         HINTS.put(5, Arrays.asList(
             "Update device driver from manufacturer or Windows Update.",
             "Uninstall device and scan for hardware changes.",
+            "Roll back driver if issue started after update.",
+            "Check Device Manager for yellow exclamation marks.",
+            "Ensure USB/Thunderbolt controller drivers are current.",
+            "Try another port or cable.",
+            "Install manufacturer-specific utility (e.g. Logitech, Dell).",
+            "Check for firmware update for the device.",
+            "Disable USB selective suspend in power options.",
+            "Verify device works on another machine.",
+            "Remove duplicate or ghost devices in Device Manager.",
+            "Check Group Policy for driver installation restrictions."
+        ));
+        HINTS.put(6, Arrays.asList(
+            "Calibrate battery (full discharge then full charge).",
+            "Check power plan (Balanced/High performance).",
+            "Reduce screen brightness and close heavy apps.",
+            "Disable unused USB devices and wake-on-LAN if not needed.",
+            "Review Task Manager for background apps using CPU.",
+            "Replace battery if health is low (manufacturer tool).",
+            "Check power adapter and cable; try another if possible.",
+            "Update BIOS for power management fixes.",
+            "Disable fast startup (can cause wake/sleep issues).",
+            "Check outlet and surge protector.",
+            "Verify hibernation and sleep settings.",
+            "Run power report: powercfg /batteryreport (Windows)."
+        ));
+        HINTS.put(7, Arrays.asList(
+            "Check cable connections (HDMI/DisplayPort).",
+            "Update graphics driver from GPU vendor (NVIDIA/AMD/Intel).",
+            "Set correct resolution and refresh rate in display settings.",
+            "Try another monitor or TV to isolate.",
+            "Disable multiple display and re-enable.",
+            "Roll back graphics driver if issue after update.",
+            "Check for overheating (clean fans, repaste).",
+            "Run display troubleshooter (Windows).",
+            "Disable hardware acceleration in apps if artifacts.",
+            "Verify monitor OSD settings (input source).",
+            "Try different cable (e.g. HDMI 2.0 for 4K).",
+            "Reset monitor to factory defaults."
+        ));
+        HINTS.put(8, Arrays.asList(
+            "Check physical volume and mute buttons.",
+            "Set correct output device (speakers/headphones).",
+            "Run audio troubleshooter (Windows).",
+            "Update or reinstall audio driver.",
+            "Disable audio enhancements (Windows Sound properties).",
+            "Verify default format (e.g. 24-bit 48000 Hz).",
+            "Check app-specific volume (mixer).",
+            "Unplug and replug USB/3.5mm device.",
+            "Reset sound settings to default.",
+            "Check for conflicting audio software.",
+            "Verify HDMI/DisplayPort audio if using monitor speakers.",
+            "Test with another device to isolate hardware."
+        ));
+    }
+
+    static List<String> getHintsForCategory(int category) {
+        List<String> list = HINTS.get(category);
+        return list != null ? new ArrayList<>(list) : Collections.emptyList();
+    }
+
+    static String getFirstHint(int category) {
+        List<String> list = HINTS.get(category);
+        return (list != null && !list.isEmpty()) ? list.get(0) : "No hints for this category.";
+    }
+}
+
+// ─── BDIGI Hash helper ──────────────────────────────────────────────────────
+
+final class BDIGIHash {
+    static byte[] sha256(byte[] input) {
+        if (input == null) return new byte[0];
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            return md.digest(input);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("SHA-256 not available", e);
+        }
+    }
+
+    static byte[] sessionIdFrom(String reporterHex, int category, long nonce) {
+        String payload = BDIGIConfig.BDIGI_NAMESPACE + ":" + reporterHex + ":" + category + ":" + nonce;
+        return sha256(payload.getBytes(StandardCharsets.UTF_8));
+    }
+
+    static byte[] stepHashFrom(byte[] sessionId, int stepIndex, String stepDescription) {
+        String payload = new String(sessionId, StandardCharsets.ISO_8859_1) + ":" + stepIndex + ":" + (stepDescription != null ? stepDescription : "");
+        return sha256(payload.getBytes(StandardCharsets.UTF_8));
+    }
+
+    static byte[] resolutionHashFrom(byte[] sessionId, String resolutionSummary) {
+        String payload = new String(sessionId, StandardCharsets.ISO_8859_1) + ":" + (resolutionSummary != null ? resolutionSummary : "");
+        return sha256(payload.getBytes(StandardCharsets.UTF_8));
+    }
