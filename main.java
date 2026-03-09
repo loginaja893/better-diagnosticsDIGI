@@ -742,3 +742,96 @@ final class BDIGIStatsAggregator {
     private final BDIGIEngine engine;
 
     BDIGIStatsAggregator(BDIGIEngine engine) {
+        this.engine = engine;
+    }
+
+    int totalSessions() {
+        return engine.listSessionIds().size();
+    }
+
+    int resolvedCount() {
+        int n = 0;
+        for (byte[] sid : engine.listSessionIds()) {
+            BDIGIDiagnosticSession s = engine.getSession(sid);
+            if (s != null && s.isResolved()) n++;
+        }
+        return n;
+    }
+
+    Map<Integer, Integer> sessionsByCategory() {
+        Map<Integer, Integer> m = new HashMap<>();
+        for (int c = 1; c <= BDIGIConfig.BDIGI_CATEGORY_COUNT; c++) {
+            m.put(c, engine.getCategoryCount(c));
+        }
+        return m;
+    }
+
+    String summary() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Total sessions: ").append(totalSessions()).append("\n");
+        sb.append("Resolved: ").append(resolvedCount()).append("\n");
+        sb.append("By category:\n");
+        for (Map.Entry<Integer, Integer> e : sessionsByCategory().entrySet()) {
+            sb.append("  ").append(BDIGICategory.fromCode(e.getKey()).getLabel()).append(": ").append(e.getValue()).append("\n");
+        }
+        return sb.toString();
+    }
+}
+
+// ─── BDIGI Step templates (predefined step descriptions for AI helper) ───────
+
+final class BDIGIStepTemplates {
+    private static final Map<Integer, List<String>> TEMPLATES = new HashMap<>();
+
+    static {
+        List<String> net = new ArrayList<>();
+        for (int i = 0; i < 24; i++) {
+            net.add("Network step " + (i + 1) + ": " + (i % 3 == 0 ? "Verify connectivity" : i % 3 == 1 ? "Check configuration" : "Test path"));
+        }
+        TEMPLATES.put(1, net);
+        List<String> disk = new ArrayList<>();
+        for (int i = 0; i < 24; i++) {
+            disk.add("Disk step " + (i + 1) + ": " + (i % 2 == 0 ? "Check space or health" : "Run tool or cleanup"));
+        }
+        TEMPLATES.put(2, disk);
+        List<String> os = new ArrayList<>();
+        for (int i = 0; i < 28; i++) {
+            os.add("OS step " + (i + 1) + ": " + (i % 4 == 0 ? "Update" : i % 4 == 1 ? "Restart" : i % 4 == 2 ? "Scan" : "Reset"));
+        }
+        TEMPLATES.put(3, os);
+        List<String> browser = new ArrayList<>();
+        for (int i = 0; i < 20; i++) {
+            browser.add("Browser step " + (i + 1) + ": Clear cache, extension, or setting");
+        }
+        TEMPLATES.put(4, browser);
+        List<String> driver = new ArrayList<>();
+        for (int i = 0; i < 22; i++) {
+            driver.add("Driver step " + (i + 1) + ": Update, rollback, or reinstall device");
+        }
+        TEMPLATES.put(5, driver);
+        List<String> power = new ArrayList<>();
+        for (int i = 0; i < 18; i++) {
+            power.add("Power step " + (i + 1) + ": Calibrate, plan, or hardware check");
+        }
+        TEMPLATES.put(6, power);
+        List<String> display = new ArrayList<>();
+        for (int i = 0; i < 20; i++) {
+            display.add("Display step " + (i + 1) + ": Cable, driver, or resolution");
+        }
+        TEMPLATES.put(7, display);
+        List<String> audio = new ArrayList<>();
+        for (int i = 0; i < 18; i++) {
+            audio.add("Audio step " + (i + 1) + ": Output device or driver");
+        }
+        TEMPLATES.put(8, audio);
+    }
+
+    static List<String> getTemplates(int category) {
+        List<String> list = TEMPLATES.get(category);
+        return list != null ? new ArrayList<>(list) : Collections.emptyList();
+    }
+
+    static String getTemplate(int category, int index) {
+        List<String> list = TEMPLATES.get(category);
+        if (list == null || index < 0 || index >= list.size()) return "";
+        return list.get(index);
