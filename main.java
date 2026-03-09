@@ -556,3 +556,96 @@ final class BDIGIReportBuilder {
 
 // ─── BDIGI Validator ───────────────────────────────────────────────────────
 
+final class BDIGIValidator {
+    static boolean isValidCategory(int category) {
+        return category >= 1 && category <= BDIGIConfig.BDIGI_CATEGORY_COUNT;
+    }
+
+    static boolean isValidOutcome(int outcome) {
+        return outcome >= 0 && outcome < BDIGIConfig.BDIGI_OUTCOME_CAP;
+    }
+
+    static boolean isValidStepIndex(int stepIndex) {
+        return stepIndex >= 0 && stepIndex < BDIGIConfig.BDIGI_MAX_STEPS_PER_SESSION;
+    }
+
+    static boolean isValidSessionId(byte[] sessionId) {
+        return sessionId != null && sessionId.length == BDIGIConfig.BDIGI_SESSION_ID_BYTES;
+    }
+
+    static boolean isValidHash(byte[] hash) {
+        return hash != null && hash.length >= BDIGIConfig.BDIGI_STEP_HASH_BYTES;
+    }
+}
+
+// ─── BDIGI Extended hints (additional steps per category) ───────────────────
+
+final class BDIGIExtendedHints {
+    private static final Map<Integer, List<String>> EXTRA = new HashMap<>();
+
+    static {
+        EXTRA.put(1, Arrays.asList(
+            "Verify no IP conflict with another device.",
+            "Check router admin page for blocked clients.",
+            "Test with Ethernet if on Wi‑Fi to rule out wireless issues.",
+            "Review recent router firmware updates.",
+            "Confirm ISP outage status.",
+            "Try tethering to phone to test if PC stack is fine.",
+            "Inspect network adapter power management (allow off = no).",
+            "Check for duplicate IPv4 addresses.",
+            "Validate subnet mask and default gateway.",
+            "Run netsh winsock reset (Windows)."
+        ));
+        EXTRA.put(2, Arrays.asList(
+            "Check Recycle Bin size and empty if needed.",
+            "Use TreeSize or WinDirStat to find large folders.",
+            "Verify SSD trim is enabled (Windows: fsutil behavior query DisableDeleteNotify).",
+            "Check for Windows.old and remove via Disk Cleanup.",
+            "Review cloud sync selective sync settings.",
+            "Ensure no runaway download or temp folder.",
+            "Check virtual memory / page file size.",
+            "Consider moving user profile to another drive if system drive full.",
+            "Verify external drive is not in read-only or failing.",
+            "Run Storage Sense (Windows 10/11) to auto-clean."
+        ));
+        EXTRA.put(3, Arrays.asList(
+            "Check Windows Update history for failed updates.",
+            "Review reliability monitor (perfmon /rel).",
+            "Temporarily disable antivirus to test.",
+            "Check for corrupt user profile (new local user test).",
+            "Verify system time and time zone.",
+            "Run memory diagnostic (mdsched).",
+            "Check for pending reboot (registry or wmic).",
+            "Review application crash dumps in %LocalAppData%\\CrashDumps.",
+            "Ensure no conflicting .NET versions.",
+            "Check Windows activation status."
+        ));
+        EXTRA.put(4, Arrays.asList(
+            "Test with a different user profile in the same browser.",
+            "Check for browser updates in background.",
+            "Verify no corporate proxy or SSL inspection breaking sites.",
+            "Clear site data for the specific domain.",
+            "Try disabling tracking protection for the site.",
+            "Check if issue is only on one site or all sites.",
+            "Review browser flags (chrome://flags) for experimental features.",
+            "Ensure WebRTC or geolocation is not blocked if needed.",
+            "Test with browser in no-sandbox mode for debugging.",
+            "Check certificate errors (valid cert, correct date)."
+        ));
+        EXTRA.put(5, Arrays.asList(
+            "Check Windows Update optional updates for drivers.",
+            "Use manufacturer-provided driver (not generic).",
+            "Verify device appears in BIOS/UEFI.",
+            "Try USB 2.0 port if device is USB 3 and flaky.",
+            "Check for power delivery (USB-C) if applicable.",
+            "Review Windows compatibility for the device.",
+            "Uninstall all instances of the device and reboot.",
+            "Check for firmware update for the peripheral.",
+            "Verify no conflict with another driver (e.g. two mouse drivers).",
+            "Test on another OS (e.g. Linux live USB) to isolate."
+        ));
+        EXTRA.put(6, Arrays.asList(
+            "Check powercfg /devicequery wake_armed for wake sources.",
+            "Review high power usage in Battery report.",
+            "Disable unnecessary startup programs.",
+            "Set GPU to power-saving when on battery.",
