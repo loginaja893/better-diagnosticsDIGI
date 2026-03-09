@@ -649,3 +649,96 @@ final class BDIGIExtendedHints {
             "Review high power usage in Battery report.",
             "Disable unnecessary startup programs.",
             "Set GPU to power-saving when on battery.",
+            "Check for BIOS power management settings.",
+            "Verify charger wattage meets laptop requirement.",
+            "Test with battery removed (AC only) if possible.",
+            "Calibrate battery if percentage is wrong.",
+            "Check for thermal throttling (high temp = lower performance).",
+            "Review OEM power manager (Dell Command, Lenovo Vantage, etc.)."
+        ));
+        EXTRA.put(7, Arrays.asList(
+            "Check GPU temperature under load.",
+            "Verify monitor supports the resolution/refresh requested.",
+            "Try lowering resolution or refresh rate.",
+            "Disable G-Sync/FreeSync to test for sync issues.",
+            "Check for GPU driver timeout (TDR) in registry.",
+            "Verify no loose connection at both ends.",
+            "Try another video output on the GPU.",
+            "Test with integrated graphics if available.",
+            "Review HDR and color format settings.",
+            "Check for firmware update for the monitor."
+        ));
+        EXTRA.put(8, Arrays.asList(
+            "Set communications device to do nothing (Windows).",
+            "Disable exclusive mode in Sound properties.",
+            "Check for sample rate mismatch (e.g. 44.1 vs 48 kHz).",
+            "Verify default device is correct in Sound settings.",
+            "Test with built-in speakers vs external.",
+            "Review spatial sound and enhancements.",
+            "Check for duplicate playback devices.",
+            "Ensure no app is holding exclusive access.",
+            "Try WASAPI shared vs exclusive in supported apps.",
+            "Verify no hardware mute or physical switch."
+        ));
+    }
+
+    static List<String> getExtendedHints(int category) {
+        List<String> list = EXTRA.get(category);
+        return list != null ? new ArrayList<>(list) : Collections.emptyList();
+    }
+}
+
+// ─── BDIGI Session timeout checker ──────────────────────────────────────────
+
+final class BDIGISessionTimeoutChecker {
+    private final BDIGIEngine engine;
+    private final long timeoutMs;
+
+    BDIGISessionTimeoutChecker(BDIGIEngine engine, long timeoutMs) {
+        this.engine = engine;
+        this.timeoutMs = timeoutMs > 0 ? timeoutMs : BDIGIConfig.BDIGI_SESSION_TIMEOUT_MS;
+    }
+
+    List<byte[]> findStaleSessions() {
+        long now = System.currentTimeMillis();
+        List<byte[]> stale = new ArrayList<>();
+        for (byte[] sid : engine.listSessionIds()) {
+            BDIGIDiagnosticSession s = engine.getSession(sid);
+            if (s != null && !s.isResolved() && (now - s.getOpenedAtMs() > timeoutMs)) {
+                stale.add(sid);
+            }
+        }
+        return stale;
+    }
+}
+
+// ─── BDIGI Hex and encoding helpers ────────────────────────────────────────
+
+final class BDIGIHex {
+    static String toHex(byte[] bytes) {
+        if (bytes == null) return "0x";
+        StringBuilder sb = new StringBuilder("0x");
+        for (byte b : bytes) {
+            sb.append(String.format("%02x", b & 0xff));
+        }
+        return sb.toString();
+    }
+
+    static byte[] fromHex(String hex) {
+        if (hex == null) return new byte[0];
+        String s = hex.startsWith("0x") ? hex.substring(2) : hex;
+        if (s.length() % 2 != 0) s = "0" + s;
+        byte[] out = new byte[s.length() / 2];
+        for (int i = 0; i < out.length; i++) {
+            out[i] = (byte) Integer.parseInt(s.substring(i * 2, i * 2 + 2), 16);
+        }
+        return out;
+    }
+}
+
+// ─── BDIGI Stats aggregator ───────────────────────────────────────────────
+
+final class BDIGIStatsAggregator {
+    private final BDIGIEngine engine;
+
+    BDIGIStatsAggregator(BDIGIEngine engine) {
