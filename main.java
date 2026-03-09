@@ -928,3 +928,96 @@ final class BDIGIDiagnosticFlow {
             "Step 4: Remove temp, cache, or old installers.",
             "Step 5: Empty Recycle Bin and clear downloads.",
             "Step 6: Check cloud sync local cache size.",
+            "Step 7: Run CHKDSK if errors reported.",
+            "Step 8: Check SMART status if available.",
+            "Step 9: Consider moving user data to another drive.",
+            "Step 10: Disable hibernation to free space if needed.",
+            "Step 11: Remove Windows.old if present after upgrade.",
+            "Step 12: Escalate to backup/replace if hardware failure."
+        );
+    }
+
+    static List<String> getFlowForOS() {
+        return Arrays.asList(
+            "Start: User reports OS slowness, crash, or error.",
+            "Step 1: Restart the computer.",
+            "Step 2: Check Task Manager for high CPU/memory.",
+            "Step 3: Review startup programs and disable unnecessary.",
+            "Step 4: Install pending Windows/macOS updates.",
+            "Step 5: Run sfc /scannow (Windows) or diskutil verifyVolume (macOS).",
+            "Step 6: Check Event Viewer or Console for errors.",
+            "Step 7: Boot Safe Mode to isolate driver/software.",
+            "Step 8: Restore to previous restore point if available.",
+            "Step 9: Run memory diagnostic.",
+            "Step 10: Disable antivirus temporarily to test.",
+            "Step 11: Create new user profile to test corruption.",
+            "Step 12: Consider reset (keep files) or reinstall as last resort."
+        );
+    }
+
+    static List<String> getFlowForBrowser() {
+        return Arrays.asList(
+            "Start: User reports browser not loading or error.",
+            "Step 1: Try incognito/private window.",
+            "Step 2: Clear cache and cookies for the site.",
+            "Step 3: Disable extensions one by one.",
+            "Step 4: Update browser to latest version.",
+            "Step 5: Check proxy and DNS in browser settings.",
+            "Step 6: Try another browser to isolate.",
+            "Step 7: Disable hardware acceleration.",
+            "Step 8: Reset browser settings to default.",
+            "Step 9: Check VPN or corporate proxy.",
+            "Step 10: Verify certificate and date/time.",
+            "Step 11: Test on another network.",
+            "Step 12: Reinstall browser if profile corrupt."
+        );
+    }
+
+    static List<String> getFlowForDriver() {
+        return Arrays.asList(
+            "Start: User reports device not working.",
+            "Step 1: Check Device Manager for warnings.",
+            "Step 2: Uninstall device and scan for hardware changes.",
+            "Step 3: Install driver from Windows Update.",
+            "Step 4: Install driver from manufacturer site.",
+            "Step 5: Roll back driver if issue after update.",
+            "Step 6: Try another USB/port or cable.",
+            "Step 7: Update chipset/USB controller drivers.",
+            "Step 8: Disable USB selective suspend.",
+            "Step 9: Check firmware update for device.",
+            "Step 10: Test on another computer.",
+            "Step 11: Remove duplicate entries in Device Manager.",
+            "Step 12: Escalate to hardware replacement if failed."
+        );
+    }
+
+    static List<String> getFlowForPower() {
+        return Arrays.asList(
+            "Start: User reports battery or power issue.",
+            "Step 1: Check power plan and brightness.",
+            "Step 2: Review Task Manager for background usage.",
+            "Step 3: Run powercfg /batteryreport.",
+            "Step 4: Calibrate battery (full cycle).",
+            "Step 5: Update BIOS for power management.",
+            "Step 6: Disable wake-on-LAN and USB wake.",
+            "Step 7: Check charger and cable.",
+            "Step 8: Verify adapter wattage meets spec.",
+            "Step 9: Disable fast startup if sleep issues.",
+            "Step 10: Check thermal throttling.",
+            "Step 11: Replace battery if health very low.",
+            "Step 12: Escalate to OEM if hardware fault."
+        );
+    }
+
+    static List<String> getFlowForDisplay() {
+        return Arrays.asList(
+            "Start: User reports display or graphics issue.",
+            "Step 1: Check cable and connections.",
+            "Step 2: Set correct resolution and refresh rate.",
+            "Step 3: Update graphics driver from vendor.",
+            "Step 4: Roll back driver if issue after update.",
+            "Step 5: Try another monitor or TV.",
+            "Step 6: Disable multi-monitor and re-enable.",
+            "Step 7: Run display troubleshooter.",
+            "Step 8: Disable hardware acceleration in app.",
+            "Step 9: Check GPU temperature.",
